@@ -1,142 +1,119 @@
 import flet as ft
-import openai
+from openai import OpenAI
 import webbrowser
-import asyncio
-from typing import Optional
-import os
 from dotenv import load_dotenv
+import os
 
 # 環境変数の読み込み
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 class DajareGenerator:
     def __init__(self):
-        self.system_prompt = """
-        あなたは優秀なダジャレ生成AIです。
-        与えられたお題に関連する面白いダジャレを1つ生成してください。
-        ダジャレは必ず日本語で、相手が理解しやすい形で出力してください。
-        出力は「ダジャレ：」という接頭辞の後にダジャレ本文のみを出力してください。
-        説明は不要です。
-        """
-
-    async def generate_dajare(self, theme: str) -> str:
-        """
-        OpenAI APIを使用してダジャレを生成する
+        # OpenAI clientの初期化
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         
-        Args:
-            theme (str): ダジャレのお題
-            
-        Returns:
-            str: 生成されたダジャレ
-            
-        Raises:
-            Exception: API呼び出しに失敗した場合
+    def generate_dajare(self, theme):
+        # GPT-4を使用してダジャレを生成
+        prompt = f"""
+        以下のお題に関連したダジャレを1つ考えてください。
+        お題: {theme}
+        
+        ダジャレは1行で、シンプルに返してください。
         """
-        try:
-            response = await openai.ChatCompletion.acreate(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": f"お題：{theme}"}
-                ]
-            )
-            return response.choices[0].message.content.replace("ダジャレ：", "").strip()
-        except Exception as e:
-            raise Exception(f"ダジャレの生成に失敗しました: {str(e)}")
-
-class DajareApp:
-    def __init__(self):
-        self.generator = DajareGenerator()
-        self.current_dajare: Optional[str] = None
-
-    def main(self, page: ft.Page):
-        """メインアプリケーションの設定と実行"""
-        # ページ設定
-        page.title = "AIダジャレジェネレーター"
-        page.window_width = 400
-        page.window_height = 500
-        page.window_resizable = False
-        page.theme_mode = ft.ThemeMode.LIGHT
-
-        # UIコンポーネント
-        title = ft.Text("AIダジャレジェネレーター", size=24, weight=ft.FontWeight.BOLD)
-        theme_input = ft.TextField(
-            label="お題",
-            hint_text="お題を入力してください",
-            width=300
+        
+        response = self.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
         )
-        result_text = ft.Text(
-            size=16,
-            width=300,
-            text_align=ft.TextAlign.CENTER,
-            selectable=True
-        )
-        loading = ft.ProgressRing(visible=False)
+        
+        return response.choices[0].message.content.strip()
 
-        async def generate_button_clicked(e):
-            """ダジャレ生成ボタンのクリックハンドラー"""
-            if not theme_input.value:
-                result_text.value = "お題を入力してください"
-                page.update()
-                return
+def main(page: ft.Page):
+    # ページ設定
+    page.title = "AIダジャレジェネレーター"
+    page.window_width = 400
+    page.window_height = 500
+    page.padding = 20
 
+    # ジェネレーターの初期化
+    generator = DajareGenerator()
+
+    # UIコンポーネント
+    title = ft.Text("AIダジャレジェネレーター", size=24, weight=ft.FontWeight.BOLD)
+    theme_input = ft.TextField(
+        label="お題",
+        hint_text="ダジャレのお題を入力してください",
+        width=360
+    )
+    result_text = ft.TextField(
+        label="生成結果",
+        read_only=True,
+        multiline=True,
+        min_lines=2,
+        width=360
+    )
+
+    # ダジャレ生成処理
+    def generate_clicked(e):
+        if theme_input.value:
+            # ボタンを無効化して処理中表示
+            generate_btn.disabled = True
+            generate_btn.text = "生成中..."
+            page.update()
+            
             try:
-                loading.visible = True
-                generate_button.disabled = True
-                share_button.disabled = True
-                page.update()
-
-                self.current_dajare = await self.generator.generate_dajare(theme_input.value)
-                result_text.value = self.current_dajare
-                share_button.disabled = False
-
-            except Exception as e:
-                result_text.value = str(e)
-                share_button.disabled = True
-
+                # ダジャレの生成
+                result = generator.generate_dajare(theme_input.value)
+                result_text.value = result
+                # シェアボタンを有効化
+                share_btn.disabled = False
+            except Exception as err:
+                result_text.value = f"エラーが発生しました: {str(err)}"
             finally:
-                loading.visible = False
-                generate_button.disabled = False
+                # ボタンを元に戻す
+                generate_btn.disabled = False
+                generate_btn.text = "ダジャレを生成"
                 page.update()
 
-        def share_button_clicked(e):
-            """シェアボタンのクリックハンドラー"""
-            if self.current_dajare:
-                tweet_text = f"AIが生成したダジャレ：\n{self.current_dajare}\n\n#AIダジャレ"
-                url = f"https://twitter.com/intent/tweet?text={tweet_text}"
-                webbrowser.open(url)
+    # Xでシェア
+    def share_clicked(e):
+        if result_text.value:
+            tweet_text = f"【AIが考えたダジャレ】\n{result_text.value}\n\nお題: {theme_input.value}\n#AIダジャレ"
+            url = f"https://twitter.com/intent/tweet?text={tweet_text}"
+            webbrowser.open(url)
 
-        # ボタン定義
-        generate_button = ft.ElevatedButton(
-            "ダジャレを生成",
-            on_click=lambda e: asyncio.create_task(generate_button_clicked(e)),
-            width=300
-        )
-        share_button = ft.ElevatedButton(
-            "Xでシェア",
-            on_click=share_button_clicked,
-            width=300,
-            disabled=True
-        )
+    # ボタンの作成
+    generate_btn = ft.ElevatedButton(
+        text="ダジャレを生成",
+        width=360,
+        on_click=generate_clicked
+    )
+    
+    share_btn = ft.ElevatedButton(
+        text="Xでシェア",
+        width=360,
+        on_click=share_clicked,
+        disabled=True  # 初期状態は無効
+    )
 
-        # レイアウト構成
-        page.add(
-            ft.Column(
-                controls=[
-                    title,
-                    theme_input,
-                    generate_button,
-                    loading,
-                    ft.Text("結果：", size=16),
-                    result_text,
-                    share_button
-                ],
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                spacing=20
-            )
+    # レイアウトの構築
+    page.add(
+        ft.Column(
+            controls=[
+                title,
+                ft.Container(height=20),
+                theme_input,
+                ft.Container(height=10),
+                generate_btn,
+                ft.Container(height=20),
+                result_text,
+                ft.Container(height=10),
+                share_btn
+            ],
+            spacing=0,
+            alignment=ft.MainAxisAlignment.START
         )
+    )
 
-if __name__ == "__main__":
-    app = DajareApp()
-    ft.app(target=app.main)
+if __name__ == '__main__':
+    ft.app(target=main)
