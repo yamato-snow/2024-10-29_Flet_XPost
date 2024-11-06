@@ -1,139 +1,101 @@
-# Pythonプロジェクト仮想環境テンプレート
+# Pythonプロジェクトテンプレート
 
-## 1. はじめに
-このリポジトリはさまざまなプログラムを簡易的にローカルにて実行するために提供されます。
+シンプルなPython開発環境のテンプレートです。
+
+作成日：2024年11月01日
+作成者：yamato-snow
 
 ### 前提条件
-- Homebrewがインストールされていること
+
+- Gitがインストールされていること
+- Homebrewがインストールされていること（macOSの場合）
     - 参考：https://brew.sh/ja/
 - Pyenvがインストールされていること
-    - 参考：https://hitori-sekai.com/python/mac-python-install/
+    - 参考：https://hitori-sekai.com/python/mac-python-install/ (macOSの場合)
+    - 参考：https://almonta2021blog.com/pyenv-version-windows/ (Windowsの場合)
 
-### プロジェクト構成
+## セットアップ手順
+
+### 1. プロジェクトの作成
+
+```bash
+# リポジトリのクローン
+git clone https://github.com/yamato-snow/python_testproject_venv.git <プロジェクト名>
+cd <プロジェクト名>
+
+# 開発用ブランチの作成と切り替え
+git branch <ブランチ名>
+git checkout <ブランチ名>
+```
+
+### 2. 初回セットアップ
+
+```bash
+# Pythonバージョンの設定
+pyenv local 3.13.0
+
+## Pythonをインストールしていない場合
+pyenv install 3.13.0
+
+# 仮想環境の作成
+python -m venv .venv
+
+# 仮想環境の有効化
+# Windows:(コマンドプロンプトで実行)
+.venv\Scripts\activate.bat
+# macOS:
+source .venv/bin/activate
+
+# 依存パッケージのインストール
+pip install --upgrade pip
+pip install -r requirements.txt
+
+コマンドプロンプトの場合は、'pip'の前に'python -m 'をつける必要があります。
+
+# 仮想環境の無効化
+deactivate
+
+```
+
+### 3. 2回目以降の実行
+
+```bash
+# 仮想環境の有効化のみ実行
+# Windows:
+.venv\Scripts\activate.bat
+# macOS:
+. .venv/bin/activate
+```
+
+### 4. プログラムの実行
+
+```bash
+python main.py
+```
+
+### 5. 変更の保存
+
+```bash
+# 変更をコミット
+git add .
+git commit -m "変更の説明"
+
+# リモートリポジトリにプッシュ
+git push origin <ブランチ名>
+```
+
+## プロジェクト構成
+
 ```
 .
-├── .venv               # 仮想環境のディレクトリです。
-├── .gitignore          # このリポジトリで使用しているファイルの一覧です。
-├── .python-version     # このリポジトリで使用しているPythonのバージョンです。
-├── main.py             # プログラムのメインファイルです。
-├── README.md           # このファイルはこのリポジトリのREADME.mdです。
-└── requirements.txt    # このリポジトリで使用しているライブラリの一覧です。
+├── .venv/              # Python仮想環境
+├── .gitignore         # Git除外設定ファイル
+├── .python-version    # Python指定バージョン
+├── main.py            # メインプログラム
+└── requirements.txt   # 依存パッケージリスト
 ```
 
-## 2. 実行手順
-このツールを使用するためには、以下の手順に従ってください。
+## ライセンス
 
-### 2.0 リポジトリのクローン
-1. リポジトリをクローンします。
-
-    ```bash
-    git clone https://github.com/yamato-snow/python_testproject_venv.git　<プロジェクト名>
-    ```
-2. クローンしたリポジトリに移動します。
-
-3. 編集用のブランチを作成します。
-
-    ```bash
-    git branch <ブランチ名>
-    ```
-
-4. ブランチを切り替えます。
-
-    ```bash
-    git checkout <ブランチ名>
-    ```
-
-5. プロジェクトを編集します。
-
-6. 編集したプロジェクトをコミットします。
-
-    ```bash
-    git commit -m "<コミットメッセージ>"
-    ```
-
-7. プロジェクトをプッシュします。
-
-    ```bash
-    git push origin <ブランチ名>
-    ```
-
-### 2.1. 環境構築
-1. 初回の設定（2回目以降の実行時はこの手順は不要です。）
-
-    スクリプトファイルをダウンロードし、任意のディレクトリに保存します。
-    Pythonのバージョン（例：3.12.2）をpyenvを使用して指定します。
-
-    ```bash
-    pyenv local 3.12.2
-    ```
-
-    ※pyenvに指定したバージョンがない場合は、以下のコマンドでインストールします。
-
-    ```bash
-    pyenv install 3.12.2
-    ```
-
-    Pythonの仮想環境を作成します。
-    ```bash
-    python -m venv .venv
-    ```
-2. 仮想環境を有効化します。（2回目以降の実行時はここから開始してください。）
-
-    Windowsコマンドプロンプトでの仮想環境の有効化
-    ```bash
-    .venv\Scripts\activate.bat
-    ```
-
-    macOSでのアクティベーション
-    ```bash
-    . .venv/bin/activate
-    ```
-
-3. 仮想環境内のpipをアップデート（1回目のみ実行してください）
-
-    ```bash
-    python -m pip install --upgrade pip
-    ```
-
-4. 必要なPythonライブラリのインストール（1回目のみ実行してください）
-
-    ```bash
-    python -m pip install -r requirements.txt
-    ```
-
-### 2.2. プログラムの実行
-1. プログラムを実行するためには、以下のコマンドを入力します。
-
-    ```bash
-    python main.py
-    ```
-2. プログラムが実行されます。
-
-## 4. ライセンス
-このスクリプトはMITライセンスに基づいて公開されています。利用規約の詳細については、同梱の`LICENSE`ファイルを参照してください。
-
-# AIダジャレジェネレーター
-
-## 概要
-AIダジャレジェネレーターは、OpenAI APIを使用してダジャレを自動生成し、Xでシェアできるデスクトップアプリケーションです。
-
-## 機能
-- お題に基づくダジャレの自動生成
-- 生成したダジャレのX（旧Twitter）へのシェア
-- シンプルで使いやすいインターフェース
-
-## インストール方法
-1. リポジトリをクローン
-```bash
-git clone [リポジトリURL]
+MITライセンス
 ```
-
-2. 必要なパッケージをインストール
-```bash
-pip install -r requirements.txt
-```
-
-3. 環境変数の設定
-`.env`ファイルを作成し、以下の内容を設定：
-```
-OPENAI_API_KEY=your_api_key_here
